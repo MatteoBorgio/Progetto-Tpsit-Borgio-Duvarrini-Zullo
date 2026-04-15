@@ -5,9 +5,6 @@ const clientRoutes = require('./routes/clientRoutes');
 const exportRoutes = require('./routes/exportRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 
-const CLIENTS_DB = './data/clients.json';
-const INVOICES_DB = './data/invoices.json';
-
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
