@@ -1,5 +1,6 @@
 const express = require('express');
 const fs = require('fs');
+const { validateClient } = require('../middlewares/validators.js');
 const router = express.Router();
 const CLIENT_DB = '../data/clients.json';
 
@@ -91,3 +92,5 @@ router.get('/:id', (req, res) => {
         })
     }
 });
+
+module.exports = router;
