@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Si è verificato un errore.",
-                errore: "File non trovato."
+                error: "File non trovato."
             });
         }
 
@@ -34,7 +34,7 @@ router.get('/', (req, res) => {
             success: false,
             message: "Si è verificato un errore.",
             error: error
-        })
+        });
     }
 });
 
@@ -58,7 +58,7 @@ router.get('/:id', (req, res) => {
         // Recuperiamo l'id dai parametri della richiesta 
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
-        if (!id || isNan(id)) {
+        if (!id || isNaN(id)) {
             return res.status(401).json({
                 success: false,
                 message: "Si è verificato un errore.",

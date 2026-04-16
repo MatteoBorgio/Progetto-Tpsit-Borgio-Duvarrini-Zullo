@@ -10,8 +10,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-app.use('/clients', clientRoutes),
-    app.use('/export', exportRoutes);
+app.use('/clients', clientRoutes)
+app.use('/export', exportRoutes);
 app.use('/invoices', invoiceRoutes);
 
 app.use((req, res) => {
