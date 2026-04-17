@@ -60,7 +60,7 @@ router.get('/:id', (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
-            return res.status(401).json({
+            return res.status(400).json({
                 success: false,
                 message: "Si è verificato un errore.",
                 error: "Id non inserito correttamente"
@@ -100,7 +100,6 @@ router.get('/:id', (req, res) => {
  * definita in /middlewares/validator.js e, se tutto va a buon fine,
  * crea il nuovo cliente riscrivendo il file clients.json e 
  * restituisce al frontend la lista dei clienti aggiornata
- * nei parametri della richiesta
  */
 router.post('/', (req, res) => {
     try {
@@ -110,7 +109,7 @@ router.post('/', (req, res) => {
         // Validiamo la richiesta con il middleware in validator.js
         const validation = validateClient(newClient);
         if (!validation.success) {
-            return res.status(401).json({
+            return res.status(400).json({
                 success: validation.success,
                 message: "Si è verificato un errore.",
                 error: validation.message
@@ -135,7 +134,7 @@ router.post('/', (req, res) => {
         clients.push(newClient);
 
         // Riscriviamo i file e restituiamo i dati all'utente
-        fs.writeFileSync(CLIENT_DB, JSON.stringify(clients));
+        fs.writeFileSync(CLIENT_DB, JSON.stringify(clients, null, 2));
         return res.status(200).json({
             success: true,
             message: "Nuovo cliente creato.",
@@ -149,6 +148,85 @@ router.post('/', (req, res) => {
             error: error
         });
     }
+});
+
+/**
+ * Rotta put /clients/:id
+ * Recupera il parametro id dall'url e ne verifica la validità
+ * Recupera la richiesta dal frontend, verifica con la funzione validateClient
+ * definita in /middlewares/validator.js
+ * Se il cliente viene trovato, i suoi dati vengono riscritti
+ * e clients.json viene riscritto
+ * Restituisce al frontend la lista dei clienti aggiornata
+ */
+router.put('/:id', (req, res) => {
+   try {
+       // Recuperiamo il corpo della richiesta
+       const newClient = req.body;
+
+       // Validiamo la richiesta con il middleware in validator.js
+       const validation = validateClient(newClient);
+       if (!validation.success) {
+           return res.status(400).json({
+               success: validation.success,
+               message: "Si è verificato un errore.",
+               error: validation.message
+           })
+       }
+
+       // Verifichiamo l'esistenza del file clients.json
+       if (!fs.existsSync(CLIENT_DB)) {
+           return res.status(404).json({
+               success: false,
+               message: "Si è verificato un errore.",
+               errore: "File non trovato."
+           });
+       }
+
+       // Recuperiamo l'id dai parametri della richiesta
+       // e verifichiamo sia un numero
+       const id = parseInt(req.params.id);
+       if (!id || isNaN(id)) {
+           return res.status(400).json({
+               success: false,
+               message: "Si è verificato un errore.",
+               error: "Id non inserito correttamente"
+           });
+       }
+
+       const data = fs.readFileSync(CLIENT_DB, 'utf-8');
+       const clients = JSON.parse(data);
+
+       // Recuperiamo l'indice del cliente in clients
+       const clientIndex = clients.findIndex(c => parseInt(c.id) === id);
+
+       if (clientIndex === -1) {
+           return res.status(404).json({
+               success: false,
+               message: "Si è verificato un errore.",
+               error: "Cliente non trovato."
+           });
+       }
+
+       // Riscriviamo l'elemento con i dati dalla richiesta
+       newClient.id = id;
+       clients[clientIndex] = newClient;
+
+       // Riscriviamo i file e restituiamo i dati all'utente
+       fs.writeFileSync(CLIENT_DB, JSON.stringify(clients, null, 2));
+       return res.status(200).json({
+           success: true,
+           message: "Cliente aggiornato",
+           results: clients
+       });
+   } catch (error) {
+       console.log("Si è verificato un errore: " + error);
+       return res.status(500).json({
+           success: false,
+           message: "Si è verificato un errore.",
+           error: error
+       });
+   }
 });
 
 module.exports = router;
