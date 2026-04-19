@@ -4,6 +4,7 @@ const path = require("path");
 const { validateClient } = require("../middlewares/validators.js");
 const router = express.Router();
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
+const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const { sendError, sendSuccessResponse } = require("../utils/utils.js");
 
 /**
@@ -195,6 +196,20 @@ router.delete("/:id", (req, res) => {
     const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
     if (clientIndex === -1) {
         return sendError(res, 404, "Cliente non trovato.");
+    }
+
+    const invoices = JSON.parse(fs.readFileSync(INVOICES_DB, "utf-8"));
+
+    const clientInvoices = invoices.find(
+        (invoice) => parseInt(invoice.clientId) === id,
+    );
+
+    if (clientInvoices) {
+        return sendError(
+            res,
+            400,
+            "Il cliente non può essere eliminato poichè ha fatture a lui intestate.",
+        );
     }
 
     clients.splice(clientIndex, 1);
