@@ -175,4 +175,38 @@ router.put("/:id", (req, res) => {
     }
 });
 
+router.delete("/:id", (req, res) => {
+    // Verifichiamo l'esistenza del file clients.json
+    if (!fs.existsSync(CLIENT_DB)) {
+        return sendError(res, 404, "File non trovato.");
+    }
+
+    // Recuperiamo l'id dai parametri della richiesta
+    // e verifichiamo sia un numero
+    const id = parseInt(req.params.id);
+    if (!id || isNaN(id)) {
+        return sendError(res, 400, "Id non inserito correttamente");
+    }
+
+    const data = fs.readFileSync(CLIENT_DB, "utf-8");
+    const clients = JSON.parse(data);
+
+    // Troviamo l'indice del cliente e lo eliminiamo dalla lista
+    const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
+    if (clientIndex === -1) {
+        return sendError(res, 404, "Cliente non trovato.");
+    }
+
+    clients.splice(clientIndex, 1);
+
+    fs.writeFileSync(CLIENT_DB, JSON.stringify(clients, null, 2));
+
+    return sendSuccessResponse(
+        res,
+        200,
+        "Cliente eliminato con succcesso.",
+        clients,
+    );
+});
+
 module.exports = router;
