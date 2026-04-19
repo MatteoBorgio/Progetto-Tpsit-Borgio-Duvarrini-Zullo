@@ -176,6 +176,15 @@ router.put("/:id", (req, res) => {
     }
 });
 
+/**
+ * Rotta delete /clients/:id
+ * Recupera il parametro id dall'url e ne verifica la validità
+ * Recupera il cliente che si vuole eliminare dalla lista dei clienti
+ * Se il cliente viene trovato, viene verificato che non ci siano
+ * fatture a lui intestate, altrimenti non viene eliminato
+ * Se tutto va a buon fine il cliente viene eliminato e i dati riscritti
+ * Restituisce al frontend la lista dei clienti aggiornata
+ */
 router.delete("/:id", (req, res) => {
     // Verifichiamo l'esistenza del file clients.json
     if (!fs.existsSync(CLIENT_DB)) {
@@ -198,6 +207,7 @@ router.delete("/:id", (req, res) => {
         return sendError(res, 404, "Cliente non trovato.");
     }
 
+    // Verifichiamo che non esistano fatture intestate al cliente
     const invoices = JSON.parse(fs.readFileSync(INVOICES_DB, "utf-8"));
 
     const clientInvoices = invoices.find(
@@ -212,6 +222,7 @@ router.delete("/:id", (req, res) => {
         );
     }
 
+    // Se non esistono lo eliminamo
     clients.splice(clientIndex, 1);
 
     fs.writeFileSync(CLIENT_DB, JSON.stringify(clients, null, 2));
