@@ -6,11 +6,19 @@
  * - address: string 
  */
 
+const {sendError} = require("../utils/utils");
+
 /**
 * Funzione per validare i dati forniti nella richiesta POST 
 * in /clients/
 */
 function validateClient(client) {
+    if (!client) {
+        return {
+            success: false,
+            message: "Cliente non fornito"
+        };
+    }
     if (!client.name) {
         return {
             success: false,
@@ -41,4 +49,60 @@ function validateClient(client) {
     };
 }
 
-module.exports = { validateClient }
+/**
+ * Schema della richiesta per la fattura:
+ * - clientId: string
+ * - date: string (Formato ISO es. 2026-04-15)
+ * - amount: int
+ * - description: string
+ * - status: string
+ */
+
+/**
+ * Funzione per validare i dati forniti nella richiesta POST
+ * in /invoices/
+ */
+
+const possibleStatus = ["draft", "sent", "paid"];
+
+function validateInvoice(invoice) {
+    if (!invoice) {
+        return {
+            success: false,
+            message: "Fattura non fornita"
+        };
+    }
+    if (!invoice.clientId) {
+        return {
+            success: false,
+            message: "Id del cliente a cui la fattura è intestata non fornito"
+        };
+    }
+    if (!invoice.date) {
+        return {
+            success: false,
+            message: "Data di emissione non fornita"
+        };
+    }
+    if (!invoice.amount) {
+        return {
+            success: false,
+            message: "Quantità non fornita"
+        };
+    }
+    if (!invoice.description) {
+        return {
+            success: false,
+            message: "Causale non fornita"
+        };
+    }
+    if (!invoice.status || possibleStatus.includes(invoice.status)) {
+        return {
+            success: false,
+            message: "Stato della fattura non valido"
+        };
+    }
+}
+
+
+module.exports = { validateClient, validateInvoice };
