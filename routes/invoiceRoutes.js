@@ -6,6 +6,7 @@ const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const { validateInvoice } = require("../middlewares/validators.js");
 const { sendError, sendSuccessResponse } = require("../utils/utils.js");
+const {validateClient} = require("../middlewares/validators");
 
 /**
  * Rotta get /invoices/
@@ -117,3 +118,59 @@ router.post("/", (req, res) => {
         return sendError(res, 500, "Errore interno del server.");
     }
 });
+
+/**
+ * Rotta put /invoices/:id
+ * Recupera il parametro id dall'url e ne verifica la validità
+ * Recupera la richiesta dal frontend, verifica con la funzione validateInvoices
+ * definita in /middlewares/validator.js
+ * Se il cliente viene trovato, i suoi dati vengono riscritti
+ * e invoices.json viene riscritto
+ * Restituisce al frontend la lista delle fatture aggiornata
+ */
+router.put("/:id", (req, res) => {
+    try {
+        // Recuperiamo il corpo della richiesta
+        const newInvoice = req.body;
+
+        // Validiamo la richiesta con il middleware in validator.js
+        const validation = validateInvoice(newInvoice);
+        if (!validation.success) {
+            return sendError(res, 400, validation.message);
+        }
+
+        // Verifichiamo l'esistenza del file invoices.json
+        if (!fs.existsSync(INVOICES_DB)) {
+            return sendError(res, 404, "File non trovato.");
+        }
+
+        // Recuperiamo l'id dai parametri della richiesta
+        // e verifichiamo sia un numero
+        const id = parseInt(req.params.id);
+        if (!id || isNaN(id)) {
+            return sendError(res, 400, "Id non inserito correttamente");
+        }
+
+        const data = fs.readFileSync(INVOICES_DB, "utf-8");
+        const invoices = JSON.parse(data);
+
+        // Recuperiamo l'indice della fattura in invoices
+        const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
+
+        if (invoiceIndex === -1) {
+            return sendError(res, 404, "Cliente non trovato.");
+        }
+
+        // Riscriviamo l'elemento con i dati dalla richiesta
+        newInvoice.id = id;
+        invoices[invoiceIndex] = newInvoice;
+
+        // Riscriviamo i file e restituiamo i dati all'utente
+        fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
+
+        return sendSuccessResponse(res, 200, "Cliente aggiornato", invoices);
+    } catch (error) {
+        console.log("Si è verificato un errore: " + error);
+        return sendError(res, 500, "Errore interno del server.");
+    }
+})
