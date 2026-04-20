@@ -104,5 +104,4 @@ function validateInvoice(invoice) {
     }
 }
 
-
 module.exports = { validateClient, validateInvoice };

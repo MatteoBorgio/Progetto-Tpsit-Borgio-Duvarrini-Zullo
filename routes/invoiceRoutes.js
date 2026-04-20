@@ -4,6 +4,7 @@ const path = require("path");
 const router = express.Router();
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
+const { validateInvoice } = require("../middlewares/validators.js");
 const { sendError, sendSuccessResponse } = require("../utils/utils.js");
 
 /**
@@ -68,8 +69,51 @@ router.get("/:id", (req, res) => {
             invoice,
         );
     } catch (error) {
-        console.log("SI è verificato un errore: " + error);
+        console.log("Si è verificato un errore: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
+});
 
-})
+/**
+ * Rotta post /invoices/
+ * Recupera la richiesta dal frontend, verifica con la funzione validateInvoice
+ * definita in /middlewares/validator.js e, se tutto va a buon fine,
+ * crea la nuova fattura riscrivendo il file invoices.json e
+ * restituisce al frontend la lista delle fatture aggiornata
+ */
+router.post("/", (req, res) => {
+    try {
+        const newInvoice = req.body;
+
+        // Validiamo la richiesta con il middleware in validator.js
+        const validation = validateInvoice(newInvoice);
+        if (!validation.success) {
+            return sendError(res, 400, validation.message);
+        }
+
+        // Verifichiamo l'esistenza del file e, in caso non esista,
+        // lo inizializziamo come lista vuota
+        let invoices = [];
+        if (fs.existsSync(INVOICES_DB)) {
+            const data = fs.readFileSync(INVOICES_DB, "utf-8");
+            invoices = JSON.parse(data);
+        }
+
+        // Verifichiamo che i dati esistenti in invoices.json siano un array
+        if (!Array.isArray(invoices)) {
+            invoices = [];
+        }
+
+        // Diamo alla nuova fattura un id univoco
+        newInvoice.id = Date.now();
+        invoices.push(newInvoice);
+
+        // Riscriviamo i file e restituiamo i dati all'utente
+        fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
+
+        return sendSuccessResponse(res, 201, "Nuova fattura creata.", invoices);
+    } catch (error) {
+        console.log("Si è verificato un errore: " + error);
+        return sendError(res, 500, "Errore interno del server.");
+    }
+});
