@@ -173,4 +173,52 @@ router.put("/:id", (req, res) => {
         console.log("Si è verificato un errore: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
-})
+});
+
+/**
+ * Rotta delete /invoices/:id
+ * Recupera il parametro id dall'url e ne verifica la validità
+ * Recupera la fattura che si vuole eliminare dalla lista
+ * Se la fattura viene trovata, viene eliminata
+ * dal file invoices.json e i dati riscritti
+ * Restituisce al frontend la lista delle fatture aggiornata
+ */
+router.delete("/:id", (req, res) => {
+    try {
+        // Verifichiamo l'esistenza del file invoices.json
+        if (!fs.existsSync(INVOICES_DB)) {
+            return sendError(res, 404, "File non trovato.");
+        }
+
+        // Recuperiamo l'id dai parametri della richiesta
+        // e verifichiamo sia un numero
+        const id = parseInt(req.params.id);
+        if (!id || isNaN(id)) {
+            return sendError(res, 400, "Id non inserito correttamente");
+        }
+
+        const data = fs.readFileSync(INVOICES_DB, "utf-8");
+        const invoices = JSON.parse(data);
+
+        // Troviamo l'indice della fattura e lo eliminiamo dalla lista
+        const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
+        if (invoiceIndex === -1) {
+            return sendError(res, 404, "Fattura non trovata.");
+        }
+
+        // Se non esistono lo eliminamo
+        invoices.splice(invoiceIndex, 1);
+
+        fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
+
+        return sendSuccessResponse(
+            res,
+            200,
+            "Cliente eliminato con succcesso.",
+            invoices,
+        );
+    } catch (error) {
+        console.log("Si è verificato un errore: " + error);
+        return sendError(res, 500, "Errore interno del server.");
+    }
+});
