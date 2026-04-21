@@ -7,6 +7,7 @@ const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const { validateInvoice } = require("../middlewares/validators.js");
 const { sendError, sendSuccessResponse } = require("../utils/utils.js");
 const {validateClient} = require("../middlewares/validators");
+const possibleStatus = ["draft", "sent", "paid"];
 
 /**
  * Rotta get /invoices/
@@ -158,7 +159,7 @@ router.put("/:id", (req, res) => {
         const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
 
         if (invoiceIndex === -1) {
-            return sendError(res, 404, "Cliente non trovato.");
+            return sendError(res, 404, "Fattura non trovata.");
         }
 
         // Riscriviamo l'elemento con i dati dalla richiesta
@@ -168,7 +169,59 @@ router.put("/:id", (req, res) => {
         // Riscriviamo i file e restituiamo i dati all'utente
         fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
 
-        return sendSuccessResponse(res, 200, "Cliente aggiornato", invoices);
+        return sendSuccessResponse(res, 200, "Fatture aggiornata", invoices);
+    } catch (error) {
+        console.log("Si è verificato un errore: " + error);
+        return sendError(res, 500, "Errore interno del server.");
+    }
+});
+
+/**
+ * Rotta patch /invoices/:id/status
+ * Recupera il parametro id dall'url e ne verifica la validità
+ * Recupera il campo della fattura che si vuole aggiornare
+ * Se la fattura viene trovata, viene aggiornato il campo richiesto
+ * dal file invoices.json e i dati riscritti
+ * Restituisce al frontend la lista delle fatture aggiornata
+ */
+router.patch("/:id/status", (req, res) => {
+    try {
+        // Recuperiamo lo status e verifichiamone la validità
+        const { status } = req.body;
+        if (!status || !possibleStatus.includes(status)) {
+            return sendError(res, 400, "Status non fornito correttamente.");
+        }
+
+        // Verifichiamo l'esistenza del file invoices.json
+        if (!fs.existsSync(INVOICES_DB)) {
+            return sendError(res, 404, "File non trovato.");
+        }
+
+        // Recuperiamo l'id dai parametri della richiesta
+        // e verifichiamo sia un numero
+        const id = parseInt(req.params.id);
+        if (!id || isNaN(id)) {
+            return sendError(res, 400, "Id non inserito correttamente");
+        }
+
+        const data = fs.readFileSync(INVOICES_DB, "utf-8");
+        const invoices = JSON.parse(data);
+
+        // Recuperiamo l'indice della fattura in invoices
+        const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
+
+        if (invoiceIndex === -1) {
+            return sendError(res, 404, "Fattura non trovata.");
+        }
+
+        // Aggiorniamo lo status
+        invoices[invoiceIndex].status = status;
+
+        // Riscriviamo i file e restituiamo i dati all'utente
+        fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
+
+        return sendSuccessResponse(res, 200, "Fattura aggiornata", invoices);
+
     } catch (error) {
         console.log("Si è verificato un errore: " + error);
         return sendError(res, 500, "Errore interno del server.");
