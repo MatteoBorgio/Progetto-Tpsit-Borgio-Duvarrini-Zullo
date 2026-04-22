@@ -2,11 +2,9 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const router = express.Router();
-const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const { validateInvoice } = require("../middlewares/validators.js");
 const { sendError, sendSuccessResponse } = require("../utils/utils.js");
-const {validateClient} = require("../middlewares/validators");
 const possibleStatus = ["draft", "sent", "paid"];
 
 /**
