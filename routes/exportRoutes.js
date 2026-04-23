@@ -3,10 +3,12 @@ const fs = require("fs");
 const path = require("path");
 const { sendError } = require("../utils/utils");
 const router = express.Router();
+const builder = require("xml2js").Builder;
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const BACKUP_JSON = path.join(__dirname, "../data/completeBackup.json");
 const CSV_FILE = path.join(__dirname, "../data/csvFile.csv");
+const XML_FILE = path.join(__dirname, "../data/xmlFile.xml");
 
 /**
  * Rotta get /export/backup/
@@ -60,7 +62,7 @@ router.get("/backup/", (req, res) => {
  */
 router.get("/csv/", (req, res) => {
     try {
-        // Verifichiamo l'esistenza di entrambi in file json
+        // Verifichiamo l'esistenza delle fatture in file json
         if (!fs.existsSync(INVOICES_DB)) {
             return sendError(
                 res,
@@ -69,7 +71,7 @@ router.get("/csv/", (req, res) => {
             );
         }
 
-        // Recuperiamo i dati dei file json e li trasformiamo in oggetto javascript
+        // Recuperiamo i dati del file json e li trasformiamo in oggetto javascript
         // verificando che non siano vuoti
         const invoices = JSON.parse(fs.readFileSync(INVOICES_DB, "utf-8"));
 
@@ -107,3 +109,85 @@ router.get("/csv/", (req, res) => {
     }
 });
 
+/**
+ * Rotta get /xml/:id
+ * Recupera l'id fornito nella richiesta e ne verifica la validità
+ * Recupera i dati in invoices.json e in clients.json
+ * Recupera la fattura che combacia con l'id fornito dall'utente
+ * e il cliente a cui è intestata
+ * Crea l'oggetto per l'esportazione in xml,
+ * che viene poi scaricato dall'utente
+ */
+router.get("/xml/:id", (req, res) => {
+    try {
+        // Verifichiamo l'esistenza di entrambi in file json
+        if (!fs.existsSync(INVOICES_DB) || !fs.existsSync(CLIENT_DB)) {
+            return sendError(
+                res,
+                404,
+                "Non è possibile eseguire l'esportazione poichè la risorsa non esiste",
+            );
+        }
+
+        // Recuperiamo l'id dai parametri della richiesta
+        // e verifichiamo sia un numero
+        const id = parseInt(req.params.id);
+        if (!id || isNaN(id)) {
+            return sendError(res, 400, "Id non inserito correttamente");
+        }
+
+        // Recuperiamo i dati delle fatture verificandone la validità
+        const invoices = JSON.parse(fs.readFileSync(INVOICES_DB, "utf-8"));
+        if (!invoices.length) {
+            return sendError(
+                res,
+                404,
+                "Non è possibile scaricare il file xml poichè la risorsa non esiste",
+            );
+        }
+
+        // Recuperiamo la fattura specifica e ne verifichiamo l'esistenza
+        const invoice = invoices.find((i) => parseInt(i.id) === id);
+        if (!invoice) {
+            return sendError(res, 404, "L'id fornito non corrisponde ad una fattura");
+        }
+
+        // Recuperiamo i dati dei clienti verificandone la validità
+        const clients = JSON.parse(fs.readFileSync(CLIENT_DB, "utf8"));
+        if (!clients.length) {
+            return sendError(
+                res,
+                404,
+                "Non è possibile scaricare il file xml poichè la risorsa non esiste",
+            );
+        }
+
+        // Recuperiamo il cliente a cui è intestata la fattura e ne verifichiamo l'esistenza
+        const client = clients.find((c) => parseInt(invoice.clientId) === parseInt(c.id));
+        if (!client) {
+            return sendError(res, 404, "Il clientId della fattura non corrisponde ad un cliente");
+        }
+
+        // Creiamo l'oggetto xml utile per l'esportazione
+        const xml_obj = {
+            invoice: {
+                invoiceData: invoice,
+                clientData: client
+            }
+        };
+
+        // Buildiamo il file xml, lo scriviamo e restituiamo il dowload all'utente
+        const xml = new builder().buildObject(xml_obj);
+
+        fs.writeFileSync(XML_FILE, xml);
+
+        res.download(XML_FILE, "invoice.xml", (err) => {
+            if (err) {
+                return sendError(res, 500, err.message || err);
+            }
+        })
+    } catch (error) {
+        console.log("Si è verificato un errore: " + error);
+        return sendError(res, 500, "Errore interno del server.");
+    }
+});
