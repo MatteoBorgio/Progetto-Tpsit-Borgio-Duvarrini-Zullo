@@ -4,7 +4,7 @@ const path = require("path");
 const router = express.Router();
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const { validateInvoice } = require("../middlewares/validators.js");
-const { sendError, sendSuccessResponse } = require("../utils/utils.js");
+const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
 const possibleStatus = ["draft", "sent", "paid"];
 
 /**

@@ -5,7 +5,7 @@ const { validateClient } = require("../middlewares/validators.js");
 const router = express.Router();
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
-const { sendError, sendSuccessResponse } = require("../utils/utils.js");
+const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
 
 /**
  * Rotta get /clients/

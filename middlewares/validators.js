@@ -6,7 +6,7 @@
  * - address: string 
  */
 
-const {sendError} = require("../utils/utils");
+const {sendError} = require("../utils/serverUtils");
 
 /**
 * Funzione per validare i dati forniti nella richiesta POST 

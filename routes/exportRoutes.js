@@ -1,7 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const { sendError } = require("../utils/utils");
+const { sendError } = require("../utils/serverUtils");
 const router = express.Router();
 const builder = require("xml2js").Builder;
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
