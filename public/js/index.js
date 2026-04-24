@@ -24,7 +24,7 @@ async function calculateTotalInvoices(invoices) {
 }
 
 async function calculateTotalCLients(clients) {
-    return clients.length;
+    statClientsCount.innerText = clients.length;
 }
 
 async function fetchStats() {
