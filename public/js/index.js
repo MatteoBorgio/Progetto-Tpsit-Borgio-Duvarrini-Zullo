@@ -18,9 +18,9 @@ async function calculateTotalInvoices(invoices) {
             totalAmountPending += amount;
         }
     });
-    statTotal.innerText = totalAmountPaid;
-    statPaidCount.innerText = totalInvoicesPaid;
-    statPending.innerText = totalAmountPending;
+    statTotal.innerText = "€" + totalAmountPaid;
+    statPaidCount.innerText = "€" + totalInvoicesPaid;
+    statPending.innerText = "€" + totalAmountPending;
 }
 
 async function calculateTotalCLients(clients) {
@@ -31,8 +31,8 @@ async function fetchStats() {
     try {
         const invoices = await getInvoices(invoicesPath);
         const clients = await getClients(clientsPath);
-        calculateTotalCLients(clients);
-        calculateTotalInvoices(invoices);
+        await calculateTotalCLients(clients);
+        await calculateTotalInvoices(invoices);
     } catch (err) {
         console.error("Errore nel caricamento statistiche", err);
     }

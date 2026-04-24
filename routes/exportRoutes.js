@@ -191,3 +191,5 @@ router.get("/xml/:id", (req, res) => {
         return sendError(res, 500, "Errore interno del server.");
     }
 });
+
+module.exports = router;

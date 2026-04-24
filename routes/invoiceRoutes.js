@@ -273,3 +273,5 @@ router.delete("/:id", (req, res) => {
         return sendError(res, 500, "Errore interno del server.");
     }
 });
+
+module.exports = router;
