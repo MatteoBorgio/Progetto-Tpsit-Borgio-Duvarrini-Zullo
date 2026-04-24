@@ -12,7 +12,7 @@ async function calculateTotalInvoices(invoices) {
     invoices.forEach(i => {
         const amount = parseFloat(i.amount);
         if (i.status === "paid") {
-            totalPaid += amount;
+            totalAmountPaid += amount;
             totalInvoicesPaid++;
         } else {
             totalAmountPending += amount;
