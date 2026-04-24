@@ -1,3 +1,6 @@
+export const invoicesPath = "https://localhost:5000/invoices";
+export const clientsPath = "https://localhost:5000/clients";
+
 export async function getData(route) {
     try {
         const response = await fetch(route);
