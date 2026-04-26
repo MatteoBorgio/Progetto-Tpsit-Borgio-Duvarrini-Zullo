@@ -6,6 +6,7 @@ const router = express.Router();
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
+const logger = require("../middlewares/logger.js");
 
 /**
  * Rotta get /clients/
@@ -13,8 +14,10 @@ const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
  */
 router.get("/", (req, res) => {
     try {
+        logger.info("Richieta GET per i dati dei clienti");
         // Verifichiamo l'esistenza del file clients.json
         if (!fs.existsSync(CLIENT_DB)) {
+            logger.warn("File clients.json non trovato");
             return sendError(res, 404, "File non trovato");
         }
 
@@ -23,6 +26,7 @@ router.get("/", (req, res) => {
         // Restituiamo i dati dei clienti in un array javascript al frontend
         const clients = JSON.parse(data);
 
+        logger.info("Dati dei clienti recuperati con successo");
         return sendSuccessResponse(
             res,
             200,
@@ -30,7 +34,7 @@ router.get("/", (req, res) => {
             clients,
         );
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -42,8 +46,10 @@ router.get("/", (req, res) => {
  */
 router.get("/:id", (req, res) => {
     try {
+        logger.info("Richiesta GET per i dati di uno specifico cliente");
         // Verifichiamo l'esistenza del file clients.json
         if (!fs.existsSync(CLIENT_DB)) {
+            logger.warn("File clients.json non trovato");
             return sendError(res, 404, "File non trovato.");
         }
 
@@ -51,6 +57,7 @@ router.get("/:id", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
@@ -60,9 +67,11 @@ router.get("/:id", (req, res) => {
         // Recuperiamo i dati di un cliente specifico e li restituiamo al frontend
         const client = clients.find((c) => parseInt(c.id) === id);
         if (!client) {
+            logger.warn("Cliente non trovato");
             return sendError(res, 404, "Cliente non trovato.");
         }
 
+        logger.info("Dati del cliente recuperati con successo");
         return sendSuccessResponse(
             res,
             200,
@@ -70,7 +79,7 @@ router.get("/:id", (req, res) => {
             client,
         );
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -84,12 +93,16 @@ router.get("/:id", (req, res) => {
  */
 router.post("/", (req, res) => {
     try {
+        logger.info("Richiesta POST per la creazione di un nuovo cliente");
         // Recuperiamo il corpo della richiesta
         const newClient = req.body;
 
         // Validiamo la richiesta con il middleware in validator.js
         const validation = validateClient(newClient);
         if (!validation.success) {
+            logger.warn(
+                "Validazione del cliente fallita: " + validation.message,
+            );
             return sendError(res, 400, validation.message);
         }
 
@@ -113,9 +126,10 @@ router.post("/", (req, res) => {
         // Riscriviamo i file e restituiamo i dati all'utente
         fs.writeFileSync(CLIENT_DB, JSON.stringify(clients, null, 2));
 
+        logger.info("Nuovo cliente creato con successo");
         return sendSuccessResponse(res, 201, "Nuovo cliente creato.", clients);
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -131,17 +145,22 @@ router.post("/", (req, res) => {
  */
 router.put("/:id", (req, res) => {
     try {
+        logger.info("Richiesta PUT per aggiornare un cliente");
         // Recuperiamo il corpo della richiesta
         const newClient = req.body;
 
         // Validiamo la richiesta con il middleware in validator.js
         const validation = validateClient(newClient);
         if (!validation.success) {
+            logger.warn(
+                "Validazione del cliente fallita: " + validation.message,
+            );
             return sendError(res, 400, validation.message);
         }
 
         // Verifichiamo l'esistenza del file clients.json
         if (!fs.existsSync(CLIENT_DB)) {
+            logger.warn("File clients.json non trovato");
             return sendError(res, 404, "File non trovato.");
         }
 
@@ -149,6 +168,7 @@ router.put("/:id", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
@@ -159,6 +179,7 @@ router.put("/:id", (req, res) => {
         const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
 
         if (clientIndex === -1) {
+            logger.warn("Cliente non trovato");
             return sendError(res, 404, "Cliente non trovato.");
         }
 
@@ -169,9 +190,10 @@ router.put("/:id", (req, res) => {
         // Riscriviamo i file e restituiamo i dati all'utente
         fs.writeFileSync(CLIENT_DB, JSON.stringify(clients, null, 2));
 
+        logger.info("Cliente aggiornato con successo");
         return sendSuccessResponse(res, 200, "Cliente aggiornato", clients);
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -187,8 +209,10 @@ router.put("/:id", (req, res) => {
  */
 router.delete("/:id", (req, res) => {
     try {
+        logger.info("Richiesta DELETE per eliminare un cliente");
         // Verifichiamo l'esistenza del file clients.json
         if (!fs.existsSync(CLIENT_DB)) {
+            logger.warn("File clients.json non trovato");
             return sendError(res, 404, "File non trovato.");
         }
 
@@ -196,6 +220,7 @@ router.delete("/:id", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
@@ -205,6 +230,7 @@ router.delete("/:id", (req, res) => {
         // Troviamo l'indice del cliente e lo eliminiamo dalla lista
         const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
         if (clientIndex === -1) {
+            logger.warn("Cliente non trovato");
             return sendError(res, 404, "Cliente non trovato.");
         }
 
@@ -216,6 +242,9 @@ router.delete("/:id", (req, res) => {
         );
 
         if (clientInvoices) {
+            logger.warn(
+                "Il cliente non può essere eliminato poichè ha fatture a lui intestate",
+            );
             return sendError(
                 res,
                 400,
@@ -228,6 +257,7 @@ router.delete("/:id", (req, res) => {
 
         fs.writeFileSync(CLIENT_DB, JSON.stringify(clients, null, 2));
 
+        logger.info("Cliente eliminato con successo");
         return sendSuccessResponse(
             res,
             200,
@@ -235,7 +265,7 @@ router.delete("/:id", (req, res) => {
             clients,
         );
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });

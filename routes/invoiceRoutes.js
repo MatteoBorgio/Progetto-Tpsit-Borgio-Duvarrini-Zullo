@@ -5,6 +5,7 @@ const router = express.Router();
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const { validateInvoice } = require("../middlewares/validators.js");
 const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
+const logger = require("../middlewares/logger.js");
 const possibleStatus = ["draft", "sent", "paid"];
 
 /**
@@ -13,8 +14,10 @@ const possibleStatus = ["draft", "sent", "paid"];
  */
 router.get("/", (req, res) => {
     try {
+        logger.info("Richiesta GET per i dati delle fatture");
         // Verifichiamo l'esistenza del file invoices.json
         if (!fs.existsSync(INVOICES_DB)) {
+            logger.warn("File invoices.json non trovato");
             return sendError(res, 404, "File non trovato");
         }
 
@@ -23,6 +26,7 @@ router.get("/", (req, res) => {
         // Restituiamo i dati dei clienti in un array javascript al frontend
         const invoices = JSON.parse(data);
 
+        logger.info("Dati delle fattura recuperati con successo");
         return sendSuccessResponse(
             res,
             200,
@@ -30,7 +34,7 @@ router.get("/", (req, res) => {
             invoices,
         );
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -41,9 +45,13 @@ router.get("/", (req, res) => {
  * nei parametri della richiesta
  */
 router.get("/:id", (req, res) => {
-    try{
+    try {
+        logger.info(
+            "Richiesta GET per recuperare i dati di una specifica fattura",
+        );
         // Verifichiamo l'esistenza del file invoices.json
         if (!fs.existsSync(INVOICES_DB)) {
+            logger.warn("File invoices.json non trovato");
             return sendError(res, 404, "File non trovato");
         }
 
@@ -51,6 +59,7 @@ router.get("/:id", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
@@ -59,9 +68,12 @@ router.get("/:id", (req, res) => {
 
         // Recuperiamo i dati di una fattura specifica e li restituiamo al frontend
         const invoice = invoices.find((i) => parseInt(i.id) === id);
-        if (invoice) {
+        if (!invoice) {
+            logger.warn("Fattura non trovata");
             return sendError(res, 404, "Fattura non trovata.");
         }
+
+        logger.info("Dati della fattura recuperati con successo");
         return sendSuccessResponse(
             res,
             200,
@@ -69,7 +81,7 @@ router.get("/:id", (req, res) => {
             invoice,
         );
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -83,11 +95,13 @@ router.get("/:id", (req, res) => {
  */
 router.post("/", (req, res) => {
     try {
+        logger.info("Richiesta POST per la creazione di una nuova fattura");
         const newInvoice = req.body;
 
         // Validiamo la richiesta con il middleware in validator.js
         const validation = validateInvoice(newInvoice);
         if (!validation.success) {
+            logger.warn("Validazione fallita: " + validation.message);
             return sendError(res, 400, validation.message);
         }
 
@@ -111,9 +125,10 @@ router.post("/", (req, res) => {
         // Riscriviamo i file e restituiamo i dati all'utente
         fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
 
+        logger.info("Nuova fattura creata con successo");
         return sendSuccessResponse(res, 201, "Nuova fattura creata.", invoices);
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -129,17 +144,20 @@ router.post("/", (req, res) => {
  */
 router.put("/:id", (req, res) => {
     try {
+        logger.info("Richiesta PUT per aggiornare una specifica fattura");
         // Recuperiamo il corpo della richiesta
         const newInvoice = req.body;
 
         // Validiamo la richiesta con il middleware in validator.js
         const validation = validateInvoice(newInvoice);
         if (!validation.success) {
+            logger.warn("Validazione fallita: " + validation.message);
             return sendError(res, 400, validation.message);
         }
 
         // Verifichiamo l'esistenza del file invoices.json
         if (!fs.existsSync(INVOICES_DB)) {
+            logger.warn("File invoices.json non trovato");
             return sendError(res, 404, "File non trovato.");
         }
 
@@ -147,6 +165,7 @@ router.put("/:id", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
@@ -157,6 +176,7 @@ router.put("/:id", (req, res) => {
         const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
 
         if (invoiceIndex === -1) {
+            logger.warn("Fattura non trovata");
             return sendError(res, 404, "Fattura non trovata.");
         }
 
@@ -167,9 +187,10 @@ router.put("/:id", (req, res) => {
         // Riscriviamo i file e restituiamo i dati all'utente
         fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
 
+        logger.info("Fattura aggiornata con successo");
         return sendSuccessResponse(res, 200, "Fatture aggiornata", invoices);
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -184,14 +205,17 @@ router.put("/:id", (req, res) => {
  */
 router.patch("/:id/status", (req, res) => {
     try {
+        logger.info("Richiesta PATCH per aggiornare lo stato della fattura");
         // Recuperiamo lo status e verifichiamone la validità
         const { status } = req.body;
         if (!status || !possibleStatus.includes(status)) {
+            logger.warn("Status non fornito correttamente");
             return sendError(res, 400, "Status non fornito correttamente.");
         }
 
         // Verifichiamo l'esistenza del file invoices.json
         if (!fs.existsSync(INVOICES_DB)) {
+            logger.warn("File invoices.json non trovato");
             return sendError(res, 404, "File non trovato.");
         }
 
@@ -199,6 +223,7 @@ router.patch("/:id/status", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
@@ -209,6 +234,7 @@ router.patch("/:id/status", (req, res) => {
         const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
 
         if (invoiceIndex === -1) {
+            logger.warn("Fattura non trovata");
             return sendError(res, 404, "Fattura non trovata.");
         }
 
@@ -218,10 +244,10 @@ router.patch("/:id/status", (req, res) => {
         // Riscriviamo i file e restituiamo i dati all'utente
         fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
 
+        logger.info("Stato della fattura aggiornato correttamente");
         return sendSuccessResponse(res, 200, "Fattura aggiornata", invoices);
-
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -236,8 +262,10 @@ router.patch("/:id/status", (req, res) => {
  */
 router.delete("/:id", (req, res) => {
     try {
+        logger.info("Richiesta DELETE per eliminare una fattura specifica");
         // Verifichiamo l'esistenza del file invoices.json
         if (!fs.existsSync(INVOICES_DB)) {
+            logger.warn("File invoices.json non trovato");
             return sendError(res, 404, "File non trovato.");
         }
 
@@ -245,6 +273,7 @@ router.delete("/:id", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
@@ -254,6 +283,7 @@ router.delete("/:id", (req, res) => {
         // Troviamo l'indice della fattura e lo eliminiamo dalla lista
         const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
         if (invoiceIndex === -1) {
+            logger.warn("Fattura non trovata");
             return sendError(res, 404, "Fattura non trovata.");
         }
 
@@ -262,16 +292,18 @@ router.delete("/:id", (req, res) => {
 
         fs.writeFileSync(INVOICES_DB, JSON.stringify(invoices, null, 2));
 
+        logger.info("Fattura eliminata con successo");
         return sendSuccessResponse(
             res,
             200,
-            "Cliente eliminato con succcesso.",
+            "Fattura eliminata con succcesso.",
             invoices,
         );
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
 
 module.exports = router;
+

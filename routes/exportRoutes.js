@@ -4,6 +4,7 @@ const path = require("path");
 const { sendError } = require("../utils/serverUtils");
 const router = express.Router();
 const builder = require("xml2js").Builder;
+const logger = require("../middlewares/logger.js");
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
 const BACKUP_JSON = path.join(__dirname, "../data/completeBackup.json");
@@ -19,8 +20,12 @@ const XML_FILE = path.join(__dirname, "../data/xmlFile.xml");
  */
 router.get("/backup/", (req, res) => {
     try {
+        logger.info("Richiesta GET per il backup completo dei dati");
         // Verifichiamo l'esistenza di entrambi in file json
         if (!fs.existsSync(INVOICES_DB) || !fs.existsSync(CLIENT_DB)) {
+            logger.warn(
+                "Impossibile eseguire il backup poichè la risorsa non esiste",
+            );
             return sendError(
                 res,
                 404,
@@ -41,13 +46,14 @@ router.get("/backup/", (req, res) => {
         // Scriviamo i file su un file completeBackup.json e lo facciamo scaricare all'utente
         fs.writeFileSync(BACKUP_JSON, JSON.stringify(completeBackup, null, 2));
 
+        logger.info("Backup eseguito con successo");
         res.download(BACKUP_JSON, "backup.json", (err) => {
             if (err) {
                 return sendError(res, 500, err.message || err);
             }
         });
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -62,8 +68,10 @@ router.get("/backup/", (req, res) => {
  */
 router.get("/csv/", (req, res) => {
     try {
+        logger.info("Richiesta GET per l'esportazione in csv");
         // Verifichiamo l'esistenza delle fatture in file json
         if (!fs.existsSync(INVOICES_DB)) {
+            logger.warn("File invoices.json non trovato");
             return sendError(
                 res,
                 404,
@@ -76,6 +84,9 @@ router.get("/csv/", (req, res) => {
         const invoices = JSON.parse(fs.readFileSync(INVOICES_DB, "utf-8"));
 
         if (!invoices.length) {
+            logger.warn(
+                "Impossibile scaricare il file csv poichè la risorsa non esiste",
+            );
             return sendError(
                 res,
                 404,
@@ -98,13 +109,15 @@ router.get("/csv/", (req, res) => {
         // Scriviamo il file e forziamo il download
         fs.writeFileSync(CSV_FILE, csv_file);
 
+        logger.info("File csv scaricato con successo");
         res.download(CSV_FILE, "invoices.csv", (err) => {
             if (err) {
+                logger.warn("Impossibile scaricare il file: " + err);
                 return sendError(res, 500, err.message || err);
             }
         });
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
@@ -120,8 +133,12 @@ router.get("/csv/", (req, res) => {
  */
 router.get("/xml/:id", (req, res) => {
     try {
+        logger.info("Richiesta GET per scaricare i dati in formato xml");
         // Verifichiamo l'esistenza di entrambi in file json
         if (!fs.existsSync(INVOICES_DB) || !fs.existsSync(CLIENT_DB)) {
+            logger.warn(
+                "Impossibile scaricare il file xml poichè la risorsa non esiste",
+            );
             return sendError(
                 res,
                 404,
@@ -133,12 +150,16 @@ router.get("/xml/:id", (req, res) => {
         // e verifichiamo sia un numero
         const id = parseInt(req.params.id);
         if (!id || isNaN(id)) {
+            logger.warn("Id non fornito correttamente");
             return sendError(res, 400, "Id non inserito correttamente");
         }
 
         // Recuperiamo i dati delle fatture verificandone la validità
         const invoices = JSON.parse(fs.readFileSync(INVOICES_DB, "utf-8"));
         if (!invoices.length) {
+            logger.warn(
+                "Impossibile scaricare il file xml poichè la risorsa non esiste",
+            );
             return sendError(
                 res,
                 404,
@@ -149,12 +170,22 @@ router.get("/xml/:id", (req, res) => {
         // Recuperiamo la fattura specifica e ne verifichiamo l'esistenza
         const invoice = invoices.find((i) => parseInt(i.id) === id);
         if (!invoice) {
-            return sendError(res, 404, "L'id fornito non corrisponde ad una fattura");
+            logger.warn(
+                "Impossibile scaricare il file xml poichè l'id fornito non corrisponde a una fattura",
+            );
+            return sendError(
+                res,
+                404,
+                "L'id fornito non corrisponde ad una fattura",
+            );
         }
 
         // Recuperiamo i dati dei clienti verificandone la validità
         const clients = JSON.parse(fs.readFileSync(CLIENT_DB, "utf8"));
         if (!clients.length) {
+            logger.warn(
+                "Impossibile scaricare il file xml poichè la risorsa non esiste",
+            );
             return sendError(
                 res,
                 404,
@@ -163,17 +194,26 @@ router.get("/xml/:id", (req, res) => {
         }
 
         // Recuperiamo il cliente a cui è intestata la fattura e ne verifichiamo l'esistenza
-        const client = clients.find((c) => parseInt(invoice.clientId) === parseInt(c.id));
+        const client = clients.find(
+            (c) => parseInt(invoice.clientId) === parseInt(c.id),
+        );
         if (!client) {
-            return sendError(res, 404, "Il clientId della fattura non corrisponde ad un cliente");
+            logger.warn(
+                "Impossibile scaricare il file xml poichè il clientId della fattura non corrisponde a quello di un cliente",
+            );
+            return sendError(
+                res,
+                404,
+                "Il clientId della fattura non corrisponde ad un cliente",
+            );
         }
 
         // Creiamo l'oggetto xml utile per l'esportazione
         const xml_obj = {
             invoice: {
                 invoiceData: invoice,
-                clientData: client
-            }
+                clientData: client,
+            },
         };
 
         // Buildiamo il file xml, lo scriviamo e restituiamo il dowload all'utente
@@ -181,15 +221,17 @@ router.get("/xml/:id", (req, res) => {
 
         fs.writeFileSync(XML_FILE, xml);
 
+        logger.info("File xml scaricato con successo");
         res.download(XML_FILE, "invoice.xml", (err) => {
             if (err) {
                 return sendError(res, 500, err.message || err);
             }
-        })
+        });
     } catch (error) {
-        console.log("Si è verificato un errore: " + error);
+        logger.error("Errore interno: " + error);
         return sendError(res, 500, "Errore interno del server.");
     }
 });
 
 module.exports = router;
+

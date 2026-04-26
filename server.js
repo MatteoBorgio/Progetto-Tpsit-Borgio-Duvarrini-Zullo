@@ -1,4 +1,5 @@
 const express = require("express");
+const logger = require("./middlewares/logger.js");
 const PORT = 5000;
 
 const clientRoutes = require("./routes/clientRoutes");
@@ -19,5 +20,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log("Server attivo su localhost:" + PORT);
+    logger.info("Server in ascolto sulla porta " + PORT);
 });
