@@ -30,6 +30,62 @@ async function calculateTotalCLients(clients) {
     statClientsCount.innerText = clients.length;
 }
 
+// Funzione per mostrare le ultime 5 fatture nella dashboard
+function renderRecentInvoices(invoices) {
+    const list = document.getElementById("recentInvoicesList");
+    if (!list) return;
+
+    // Controllo di sicurezza: se non ci sono fatture, mostriamo un messaggio vuoto
+    if (!Array.isArray(invoices) || invoices.length === 0) {
+        list.innerHTML =
+            '<li class="list-group-item text-center text-muted p-4">Nessuna fattura recente.</li>';
+        return;
+    }
+
+    // Ordiniamo dalla più recente alla più vecchia e prendiamo solo le prime 5
+    const recentInvoices = [...invoices]
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+
+    // Mappiamo l'array in stringhe HTML e lo uniamo
+    list.innerHTML = recentInvoices
+        .map((inv) => {
+            // Formattiamo la data in formato italiano
+            const dateStr = new Date(inv.date).toLocaleDateString("it-IT");
+
+            // Formattiamo l'importo in Euro
+            const amountStr = new Intl.NumberFormat("it-IT", {
+                style: "currency",
+                currency: "EUR",
+            }).format(inv.amount || 0);
+
+            // Cambiamo il colore dell'importo in base allo stato usando le classi Bootstrap
+            let amountClass = "text-dark";
+            if (inv.status === "paid") amountClass = "text-success fw-bold";
+            else if (inv.status === "sent")
+                amountClass = "text-warning fw-bold";
+
+            // Usiamo il nome del cliente se disponibile nel JSON, altrimenti l'ID della fattura
+            const title =
+                inv.clientName ||
+                `Fattura #${inv.id ? inv.id.toString().substring(0, 6) : "---"}`;
+
+            // Restituiamo l'html per ogni oggetto della lista
+            return `
+            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                <div>
+                    <h6 class="mb-0 text-truncate" style="max-width: 180px;">${title}</h6>
+                    <small class="text-muted">${dateStr}</small>
+                </div>
+                <span class="${amountClass}">
+                    ${amountStr}
+                </span>
+            </li>
+        `;
+        })
+        .join("");
+}
+
 // Funzione che aggiunge l'evento al bottone per il backup
 function setupBackupButton() {
     const backupButton = document.getElementById("btnBackup");
@@ -145,6 +201,7 @@ async function fetchStats() {
         await calculateTotalCLients(clients);
         await calculateTotalInvoices(invoices);
         renderChart(invoices);
+        renderRecentInvoices(invoices);
     } catch (err) {
         console.error("Errore nel caricamento statistiche", err);
     }
