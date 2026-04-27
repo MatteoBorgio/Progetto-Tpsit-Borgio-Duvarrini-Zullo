@@ -186,6 +186,7 @@ function renderChart(invoices) {
         const container = placeholder.parentElement;
         container.classList.add("p-5", "border", "border-dashed");
 
+        // Cancelliamo la precedente istanza del grafico se esiste
         if (window.revenueChartInstance) {
             window.revenueChartInstance.destroy();
             window.revenueChartInstance = null;

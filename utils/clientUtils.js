@@ -11,14 +11,15 @@ export async function getData(route) {
         return data.results;
     } catch (error) {
         console.error("Errore nel caricamento statistiche", error);
-        return null;
+        throw new Error(error.message);
     }
 }
 
 export const getClients = async () => {
-    return await getData("https://localhost:5000/clients");
+    return await getData(clientsPath);
 };
 
 export const getInvoices = async () => {
-    return await getData("https://localhost:5000/invoices");
-}
+    return await getData(invoicesPath);
+};
+
