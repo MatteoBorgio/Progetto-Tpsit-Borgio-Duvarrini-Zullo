@@ -103,6 +103,7 @@ function renderClientsTable(clients) {
             <td class="align-middle">
                 <a href="mailto:${client.email}" class="text-decoration-none">${client.email}</a>
             </td>
+            <td class="align-middle fw-bold">${client.address}</td>
             <td class="align-middle">
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteClient('${client.id}')">
                     🗑️ Elimina

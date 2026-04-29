@@ -234,23 +234,25 @@ router.delete("/:id", (req, res) => {
             return sendError(res, 404, "Cliente non trovato.");
         }
 
-        // Verifichiamo che non esistano fatture intestate al cliente
-        const invoicesData = fs.readFileSync(INVOICES_DB, "utf-8");
-        const invoices = invoicesData ? JSON.parse(invoicesData) : [];
+        if (fs.existsSync(INVOICES_DB)) {
+            // Verifichiamo che non esistano fatture intestate al cliente
+            const invoicesData = fs.readFileSync(INVOICES_DB, "utf-8");
+            const invoices = invoicesData ? JSON.parse(data) : [];
 
-        const clientInvoices = invoices.find(
-            (invoice) => parseInt(invoice.clientId) === id,
-        );
+            const clientInvoices = invoices.find(
+                (invoice) => parseInt(invoice.clientId) === id,
+            );
 
-        if (clientInvoices) {
-            logger.warn(
-                "Il cliente non può essere eliminato poichè ha fatture a lui intestate",
-            );
-            return sendError(
-                res,
-                400,
-                "Il cliente non può essere eliminato poichè ha fatture a lui intestate.",
-            );
+            if (clientInvoices) {
+                logger.warn(
+                    "Il cliente non può essere eliminato poichè ha fatture a lui intestate",
+                );
+                return sendError(
+                    res,
+                    400,
+                    "Il cliente non può essere eliminato poichè ha fatture a lui intestate.",
+                );
+            }
         }
 
         // Se non esistono lo eliminamo
