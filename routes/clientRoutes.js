@@ -24,7 +24,7 @@ router.get("/", (req, res) => {
         const data = fs.readFileSync(CLIENT_DB, "utf-8");
 
         // Restituiamo i dati dei clienti in un array javascript al frontend
-        const clients = JSON.parse(data);
+        const clients = data ? JSON.parse(data) : [];
 
         logger.info("Dati dei clienti recuperati con successo");
         return sendSuccessResponse(
@@ -62,7 +62,7 @@ router.get("/:id", (req, res) => {
         }
 
         const data = fs.readFileSync(CLIENT_DB, "utf-8");
-        const clients = JSON.parse(data);
+        const clients = data ? JSON.parse(data) : [];
 
         // Recuperiamo i dati di un cliente specifico e li restituiamo al frontend
         const client = clients.find((c) => parseInt(c.id) === id);
@@ -110,8 +110,8 @@ router.post("/", (req, res) => {
         // lo inizializziamo come lista vuota
         let clients = [];
         if (fs.existsSync(CLIENT_DB)) {
-            const data = fs.readFileSync(CLIENT_DB);
-            clients = JSON.parse(data);
+            const data = fs.readFileSync(CLIENT_DB, "utf-8");
+            clients = data ? JSON.parse(data) : [];
         }
 
         // Verifichiamo che i dati esistenti in clients.json siano un array
@@ -173,7 +173,7 @@ router.put("/:id", (req, res) => {
         }
 
         const data = fs.readFileSync(CLIENT_DB, "utf-8");
-        const clients = JSON.parse(data);
+        const clients = data ? JSON.parse(data) : [];
 
         // Recuperiamo l'indice del cliente in clients
         const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
@@ -225,7 +225,7 @@ router.delete("/:id", (req, res) => {
         }
 
         const data = fs.readFileSync(CLIENT_DB, "utf-8");
-        const clients = JSON.parse(data);
+        const clients = data ? JSON.parse(data) : [];
 
         // Troviamo l'indice del cliente e lo eliminiamo dalla lista
         const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
@@ -235,7 +235,8 @@ router.delete("/:id", (req, res) => {
         }
 
         // Verifichiamo che non esistano fatture intestate al cliente
-        const invoices = JSON.parse(fs.readFileSync(INVOICES_DB, "utf-8"));
+        const invoicesData = fs.readFileSync(INVOICES_DB, "utf-8");
+        const invoices = invoicesData ? JSON.parse(invoicesData) : [];
 
         const clientInvoices = invoices.find(
             (invoice) => parseInt(invoice.clientId) === id,

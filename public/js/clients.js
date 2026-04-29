@@ -1,6 +1,17 @@
 import { getClients } from "../../utils/clientUtils.js";
 import { clientsPath } from "../../utils/clientUtils.js";
 
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Carichiamo i clienti appena la pagina è pronta
+    loadClients();
+
+    // 2. Colleghiamo l'evento di submit del form alla funzione di salvataggio
+    const form = document.getElementById("formClient");
+    if (form) {
+        form.addEventListener("submit", handleNewClient);
+    }
+});
+
 // Funzione per gestire l'aggiunta di un nuovo cliente
 async function handleNewClient(event) {
     // Impediamo alla pagina di ricaricarsi
@@ -13,7 +24,7 @@ async function handleNewClient(event) {
 
     try {
         // Effettuiamo una richiesta post per aggiungere un nuovo cliente
-        const response = await fetch("/clients", {
+        const response = await fetch(clientsPath, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -38,6 +49,32 @@ async function handleNewClient(event) {
     } catch (error) {
         console.error("Errore durante il salvataggio:", error);
         alert("Errore di connessione al server");
+    }
+}
+
+// Funzione per eliminare un cliente specifico
+async function deleteClient(clientId) {
+    // Chiediamo conferma all'utente
+    const is_confirmed = confirm(
+        "Sei sicuro di voler eliminare questo cliente?",
+    );
+    if (!is_confirmed) return;
+    try {
+        // Effettuiamo una richiesta delete per eliminare il cliente specifico
+        const response = await fetch(`${clientsPath}/${clientId}`, {
+            method: "DELETE",
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            // Se tutto va a buon fine, renderizziamo la lista dei clienti aggiornata
+            loadClients();
+        } else {
+            alert("Errore durante l'eliminazione del cliente");
+        }
+    } catch (error) {
+        console.error("Errore durante l'eliminazione:", error);
+        alert("Errore di rete durante l'eliminazione.");
     }
 }
 
@@ -89,3 +126,6 @@ async function loadClients() {
         `;
     }
 }
+
+// Rendiamo la funzione disponibile nell'html
+window.deleteClient = deleteClient;

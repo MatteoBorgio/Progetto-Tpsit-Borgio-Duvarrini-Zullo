@@ -10,6 +10,8 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
+app.use("/js", express.static("js"));
+app.use("/utils", express.static("utils"));
 
 app.use("/clients", clientRoutes);
 app.use("/export", exportRoutes);

@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 // Definiamo il path del file per salvare i log
-const LOG_PATH = path.join(__dirname, "logs.log");
+const LOG_PATH = path.join("logs.log");
 
 // Funzione per formattare i messaggi aggiungendo il timestamp
 // in formato ISO [2026-04-26T10:45:35.123Z]
