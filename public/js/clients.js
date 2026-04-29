@@ -123,8 +123,7 @@ async function loadClients() {
     } catch (error) {
         console.error("Errore durante il caricamento dei clienti:", error);
         document.getElementById("clientsTableBody").innerHTML = `
-            <tr><td colspan="4" class="text-center text-danger">Errore nel caricamento dei dati.</td></tr>
-        `;
+            <tr><td colspan="5" class="text-center text-danger">Errore nel caricamento dei dati.</td></tr> `;
     }
 }
 

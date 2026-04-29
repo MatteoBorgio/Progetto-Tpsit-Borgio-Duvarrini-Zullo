@@ -1,17 +1,22 @@
 import { getInvoices, getClients } from "../../utils/clientUtils.js";
 import { invoicesPath, clientsPath } from "../../utils/clientUtils.js";
 
-// Funzione che calcola le statistiche per le fatture
+// Funzione per calcolare le statistiche delle fatture
 async function calculateTotalInvoices(invoices) {
     const statTotal = document.getElementById("statTotal");
     const statPaidCount = document.getElementById("statPaidCount");
     const statPending = document.getElementById("statPending");
+    const statPaidAmount = document.getElementById("statPaidAmount"); // Aggiungi questo!
 
     let totalAmountPaid = 0.0;
     let totalAmountPending = 0.0;
     let totalInvoicesPaid = 0;
-    invoices.forEach((i) => {
-        const amount = parseFloat(i.amount);
+
+    // Sicurezza: se invoices non è un array, usiamo un array vuoto
+    const data = Array.isArray(invoices) ? invoices : [];
+
+    data.forEach((i) => {
+        const amount = parseFloat(i.amount) || 0;
         if (i.status === "paid") {
             totalAmountPaid += amount;
             totalInvoicesPaid++;
@@ -19,11 +24,23 @@ async function calculateTotalInvoices(invoices) {
             totalAmountPending += amount;
         }
     });
-    statTotal.innerText = "€" + totalAmountPaid;
-    statPaidCount.innerText = "€" + totalInvoicesPaid;
-    statPending.innerText = "€" + totalAmountPending;
-}
 
+    // Formattazione Euro
+    const formatter = new Intl.NumberFormat("it-IT", {
+        style: "currency",
+        currency: "EUR",
+    });
+
+    if (statTotal)
+        statTotal.innerText = formatter.format(
+            totalAmountPaid + totalAmountPending,
+        );
+    if (statPaidAmount)
+        statPaidAmount.innerText = formatter.format(totalAmountPaid);
+    if (statPaidCount) statPaidCount.innerText = totalInvoicesPaid;
+    if (statPending)
+        statPending.innerText = formatter.format(totalAmountPending);
+}
 // Funzione che calcola il numero di clienti e lo scrive nell'html
 async function calculateTotalCLients(clients) {
     const statClientsCount = document.getElementById("statClientsCount");
@@ -197,14 +214,18 @@ function renderChart(invoices) {
 // quella che renderizza il grafico
 async function fetchStats() {
     try {
-        const invoices = await getInvoices(invoicesPath);
         const clients = await getClients(clientsPath);
+        console.log("Clienti recuperati:", clients);
         await calculateTotalCLients(clients);
+
+        const invoices = await getInvoices(invoicesPath);
+        console.log("Fatture recuperate:", invoices);
         await calculateTotalInvoices(invoices);
+
         renderChart(invoices);
         renderRecentInvoices(invoices);
     } catch (err) {
-        console.error("Errore nel caricamento statistiche", err);
+        console.error("Errore nel caricamento statistiche:", err);
     }
 }
 
