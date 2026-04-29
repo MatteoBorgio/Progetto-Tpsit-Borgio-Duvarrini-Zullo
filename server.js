@@ -1,6 +1,15 @@
 const express = require("express");
+const path = require("path");
+const fs = require("fs");
 const logger = require("./middlewares/logger.js");
 const PORT = 5000;
+
+const dataDir = path.join(__dirname, "data");
+
+// Creiamo la cartella se non esiste
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
 
 const clientRoutes = require("./routes/clientRoutes");
 const exportRoutes = require("./routes/exportRoutes");
