@@ -5,6 +5,7 @@ const { validateClient } = require("../middlewares/validators.js");
 const router = express.Router();
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
+const ID_CLIENTS_PATH = path.join(__dirname, "../counters/clientsIdCounter.txt");
 const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
 const logger = require("../middlewares/logger.js");
 
@@ -120,7 +121,15 @@ router.post("/", (req, res) => {
         }
 
         // Diamo al nuovo cliente un id univoco
-        newClient.id = Date.now();
+        if (!fs.existsSync(ID_CLIENTS_PATH)) {
+            newClient.id = 1
+        } else {
+            const actualId = parseInt(fs.readFileSync(ID_CLIENTS_PATH, "utf-8"));
+            newClient.id = actualId + 1;
+        }
+
+        // Scriviamo il nuovo Id su file
+        fs.writeFileSync(ID_CLIENTS_PATH, newClient.id);
         clients.push(newClient);
 
         // Riscriviamo i file e restituiamo i dati all'utente

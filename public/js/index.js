@@ -37,7 +37,7 @@ async function calculateTotalInvoices(invoices) {
         );
     if (statPaidAmount)
         statPaidAmount.innerText = formatter.format(totalAmountPaid);
-    if (statPaidCount) statPaidCount.innerText = totalInvoicesPaid;
+    if (statPaidCount) statPaidCount.innerText = String(totalInvoicesPaid);
     if (statPending)
         statPending.innerText = formatter.format(totalAmountPending);
 }

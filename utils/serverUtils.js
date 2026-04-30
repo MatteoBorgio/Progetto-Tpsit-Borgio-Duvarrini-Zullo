@@ -1,3 +1,5 @@
+const fs = require("fs");
+
 function sendError(res, status, message) {
     return res.status(status).json({
         success: false,
@@ -13,7 +15,14 @@ function sendSuccessResponse(res, status, message, results) {
     });
 }
 
+function createFolder(path) {
+    if (!fs.existsSync(path)) {
+        fs.mkdirSync(path, { recursive: true });
+    }
+}
+
 module.exports = {
     sendError,
     sendSuccessResponse,
+    createFolder,
 };

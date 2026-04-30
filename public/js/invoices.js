@@ -6,8 +6,6 @@ import { invoicesPath, clientsPath } from "../../utils/clientUtils.js";
  */
 async function initPage() {}
 
-// --- 2. GESTIONE DATI (FETCH & RENDER) ---
-
 /**
  * Popola il menu a tendina (select) nel modal con i nomi dei clienti esistenti
  */
