@@ -6,10 +6,28 @@ import { invoicesPath, clientsPath } from "../../utils/clientUtils.js";
  */
 async function initPage() {}
 
-/**
- * Popola il menu a tendina (select) nel modal con i nomi dei clienti esistenti
- */
-async function loadClientsSelect() {}
+// Funzione che popola il menu a tendina dei clienti
+async function loadClientsSelect() {
+    try {
+        // Riprendiamo l'elemento della selezione del cliente nell'html
+        const clientsSelection = document.getElementById("selectClient");
+        if (!clientsSelection) return;
+        // Riprendiamo la lista dei clienti dal server
+        const clients = await getClients();
+        clientsSelection.innerHTML = `<option value="">Seleziona un cliente...</option>`;
+        // Per ogni cliente creiamo un opzione personalizzata
+        clients.forEach(client => {
+            const option = document.createElement("option");
+            // Utile per riprendere il cliente nel database per riprendere poi le sue informazioni
+            option.value = client.id;
+            option.textContent = client.name;
+            clientsSelection.appendChild(option);
+        });
+    } catch(error) {
+        console.error("Errore durante il salvataggio:", error);
+        alert("Errore di connessione al server");
+    }
+}
 
 /**
  * Recupera le fatture dal server e popola la tabella HTML
