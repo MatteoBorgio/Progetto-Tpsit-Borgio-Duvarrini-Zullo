@@ -67,20 +67,20 @@ function renderRecentInvoices(invoices) {
     // Mappiamo l'array in stringhe HTML e lo uniamo
     list.innerHTML = recentInvoices
         .map((inv) => {
-            // Formattiamo la data in formato italiano
-            const dateStr = new Date(inv.date).toLocaleDateString("it-IT");
+            // Formattiamo la data
+            const date = new Date(inv.date).toLocaleDateString("it-IT");
 
             // Formattiamo l'importo in Euro
-            const amountStr = new Intl.NumberFormat("it-IT", {
+            const amount = new Intl.NumberFormat("it-IT", {
                 style: "currency",
                 currency: "EUR",
             }).format(inv.amount || 0);
 
             // Cambiamo il colore dell'importo in base allo stato usando le classi Bootstrap
-            let amountClass = "text-dark";
-            if (inv.status === "paid") amountClass = "text-success fw-bold";
+            let amountColor = "text-dark";
+            if (inv.status === "paid") amountColor = "text-success fw-bold";
             else if (inv.status === "sent")
-                amountClass = "text-warning fw-bold";
+                amountColor = "text-warning fw-bold";
 
             // Usiamo il nome del cliente se disponibile nel JSON, altrimenti l'ID della fattura
             const title =
@@ -92,10 +92,10 @@ function renderRecentInvoices(invoices) {
             <li class="list-group-item d-flex justify-content-between align-items-center p-3">
                 <div>
                     <h6 class="mb-0 text-truncate" style="max-width: 180px;">${title}</h6>
-                    <small class="text-muted">${dateStr}</small>
+                    <small class="text-muted">${date}</small>
                 </div>
-                <span class="${amountClass}">
-                    ${amountStr}
+                <span class="${amountColor}">
+                    ${amount}
                 </span>
             </li>
         `;

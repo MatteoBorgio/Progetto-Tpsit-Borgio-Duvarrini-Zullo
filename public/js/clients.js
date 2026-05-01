@@ -81,20 +81,20 @@ async function deleteClient(clientId) {
 // Funzione per renderizzare la tabella con i campi dei clienti
 function renderClientsTable(clients) {
     // Riprendiamo la tabella dall'html
-    const tableBody = document.getElementById("clientsTableBody");
-    if (!tableBody) return;
-    // Caso in cui non ci sono clienti
+    const clientsTableBody = document.getElementById("clientsTableBody");
+    if (!clientsTableBody) return;
+    // Caso in cui non ci siano clienti
     if (!Array.isArray(clients) || clients.length === 0) {
-        tableBody.innerHTML = `
+        clientsTableBody.innerHTML = `
             <tr>
-                <td colspan="4" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-4">
                     Nessun cliente presente.
                 </td>
             </tr>`;
         return;
     }
     // Scriviamo la tabella per ogni cliente
-    tableBody.innerHTML = clients
+    clientsTableBody.innerHTML = clients
         .map(
             (client) => `
         <tr>
