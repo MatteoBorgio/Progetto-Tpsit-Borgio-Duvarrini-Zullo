@@ -2,13 +2,61 @@ import { getInvoices, getClients } from "../../utils/clientUtils.js";
 import { invoicesPath, clientsPath } from "../../utils/clientUtils.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Carichiamo i clienti appena la pagina è pronta
+    // Carichiamo la tabella delle fatture
     loadInvoicesTable();
+    // Popoliamo il menu a tendina dei clienti
+    loadClientsSelect();
 
-    // 2. Colleghiamo l'evento di submit del form alla funzione di salvataggio
+    // Colleghiamo l'evento di submit del form alla funzione di salvataggio
     const form = document.getElementById("formInvoice");
     if (form) {
         form.addEventListener("submit", handleNewInvoice);
+    }
+
+    // Colleghiamo gli eventi ai bottoni della tabella
+    const invoicesTableBody = document.getElementById("invoicesTableBody");
+    if (invoicesTableBody) {
+        invoicesTableBody.addEventListener("click", (event) => {
+            // Gestione bottone Elimina
+            const deleteBtn = event.target.closest(".btn-delete");
+            if (deleteBtn) {
+                const invoiceId = deleteBtn.getAttribute("data-id");
+                deleteInvoice(invoiceId);
+            }
+
+            // Gestione bottone Cambia Stato
+            const toggleBtn = event.target.closest(".btn-toggle");
+            if (toggleBtn) {
+                const invoiceId = toggleBtn.getAttribute("data-id");
+                toggleInvoiceStatus(invoiceId);
+            }
+        });
+    }
+
+    // Colleghiamo i filtri (Tutte, Pagate, In attesa)
+    const filterButtons = document.querySelectorAll(".btn-group .btn");
+    filterButtons.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            // Aggiorniamo la UI: togliamo 'active' da tutti e lo mettiamo su quello cliccato
+            filterButtons.forEach((b) => b.classList.remove("active"));
+            e.target.classList.add("active");
+
+            // Leggiamo il testo e filtriamo di conseguenza
+            const text = e.target.innerText.trim();
+            if (text === "Tutte") {
+                loadInvoicesTable();
+            } else if (text === "Pagate") {
+                filterInvoices("paid");
+            } else if (text === "In attesa") {
+                filterInvoices("sent");
+            }
+        });
+    });
+
+    // Colleghiamo il bottone di esportazione in CSV
+    const btnExport = document.getElementById("btnExportCSV");
+    if (btnExport) {
+        btnExport.addEventListener("click", exportToCSV);
     }
 });
 
@@ -175,30 +223,137 @@ async function handleNewInvoice(event) {
     }
 }
 
-/**
- * Elimina una fattura specifica
- */
-async function deleteInvoice(invoiceId) {}
+// Funzione per eliminare una fattura specifica
+async function deleteInvoice(invoiceId) {
+    // Chiediamo conferma all'utente
+    const is_confirmed = confirm(
+        "Sei sicuro di voler eliminare questa fattura?",
+    );
+    if (!is_confirmed) return;
+    try {
+        // Effettuiamo una richiesta delete per eliminare il cliente specifico
+        const response = await fetch(`${invoicesPath}/${invoiceId}`, {
+            method: "DELETE",
+        });
 
-/**
- * Cambia lo stato di una fattura (es. da "In attesa" a "Pagata")
- */
-async function toggleInvoiceStatus(invoiceId) {}
+        const data = await response.json();
+        if (data.success) {
+            // Se tutto va a buon fine, renderizziamo la lista delle fatture aggiornata
+            loadInvoicesTable();
+        } else {
+            alert("Errore durante l'eliminazione della fattura");
+        }
+    } catch (error) {
+        console.error("Errore durante l'eliminazione:", error);
+        alert("Errore di rete durante l'eliminazione.");
+    }
+}
 
-/**
- * Filtra la visualizzazione della tabella in base allo stato (Tutte/Pagate/In attesa)
- */
-function filterInvoices(status) {}
+// Funzione che cambia lo stato di una fattura da "in attesa" a "pagata"
+async function toggleInvoiceStatus(invoiceId) {
+    try {
+        // Recuperiamo le fatture
+        const invoices = await getInvoices();
+        // Ricerchiamo la fattura da aggiornare
+        const invoiceToUpdate = invoices.find(
+            (i) => String(i.id) === String(invoiceId),
+        );
+        if (!invoiceToUpdate) {
+            alert("Errore: Fattura non trovata.");
+            return;
+        }
+        // Decidiamo il nuovo stato (se è sent diventa paid e viceversa)
+        const newStatus = invoiceToUpdate.status === "paid" ? "sent" : "paid";
+        // Scriviamo la fattura aggiornata
+        const updatedInvoice = { ...invoiceToUpdate, status: newStatus };
+
+        // Richiamiamo la rotta patch al server
+        const response = await fetch(`${invoicesPath}/${invoiceId}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newStatus),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Se tutto va a buon fine ricarichiamo la tabella aggiornata
+            loadInvoicesTable();
+        } else {
+            alert(
+                `Errore: ${data.message || "Impossibile aggiornare lo stato"}`,
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Errore durante l'aggiornamento dello stato della fattura: ",
+            error,
+        );
+        alert(
+            "Errore di rete durante l'aggiornamento dello stato della fattura",
+        );
+    }
+}
+
+// Funzione che filtra le fatture in base allo stato
+async function filterInvoices(status) {
+    const invoicesTableBody = document.getElementById("invoicesTableBody");
+    if (!invoicesTableBody) return;
+
+    // Mostriamo un feedback visivo durante il caricamento
+    invoicesTableBody.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center text-muted py-4">Applicazione filtro...</td>
+        </tr>`;
+
+    try {
+        const invoices = await getInvoices();
+        const clients = await getClients();
+
+        // Prendiamo solo le fatture richieste
+        if (status === "paid") {
+            invoices = invoices.filter((i) => i.status === "paid");
+        } else if (status === "sent") {
+            invoices = invoices.filter((i) => i.status === "sent");
+        }
+
+        // Se nessuna fattura corrisponde, mandiamo un messaggio di errore
+        if (invoices.length === 0) {
+            invoicesTableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Nessuna fattura trovata per questo stato.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        // Scriviamo sulla tabella le fatture che corrispondono
+        invoicesTableBody.innerHTML = invoices
+            .map((invoice) => {
+                const client = clients.find((c) => c.id === invoice.clientId);
+                const clientName = client ? client.name : "Cliente Rimosso";
+                return renderInvoiceRow(invoice, clientName);
+            })
+            .join("");
+    } catch (error) {
+        console.error("Errore durante il filtraggio:", error);
+        invoicesTableBody.innerHTML = `<tr>
+            <td colspan="5" class="text-center text-danger py-4">Errore di caricamento.</td>
+        </tr>`;
+    }
+}
 
 /**
  * Gestisce il download del file CSV generato dal server
  */
-function exportToCSV() {}
+function exportToCSV() {
+    const csvPath = "/export/csv";
+    // Reindirizziamo la finestra alla rotta per l'export in csv
+    window.location.href = csvPath;
+}
 
-/**
- * Configura tutti i listener per i bottoni e i form
- */
-function setupEventListeners() {}
-
-// Avvio al caricamento del DOM
-document.addEventListener("DOMContentLoaded", initPage);
+// Rendiamo la funzione disponibile nell'html
+window.deleteInvoice = deleteInvoice;
