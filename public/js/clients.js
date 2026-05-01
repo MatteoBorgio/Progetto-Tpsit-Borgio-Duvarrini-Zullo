@@ -121,9 +121,8 @@ async function loadClients() {
         const clients = await getClients(clientsPath);
         renderClientsTable(clients);
     } catch (error) {
-        console.error("Errore durante il caricamento dei clienti:", error);
-        document.getElementById("clientsTableBody").innerHTML = `
-            <tr><td colspan="5" class="text-center text-danger">Errore nel caricamento dei dati.</td></tr> `;
+        console.error("Nessun dato trovato o errore di rete: ", error);
+        renderClientsTable([]);
     }
 }
 

@@ -114,7 +114,9 @@ async function loadInvoicesTable() {
         invoicesTableBody.innerHTML = invoices
             .map((invoice) => {
                 // Incrociamo i dati: troviamo il nome del cliente a partire dal suo ID
-                const client = clients.find((c) => c.id === invoice.clientId);
+                const client = clients.find(
+                    (c) => String(c.id) === String(invoice.clientId),
+                );
                 const clientName = client
                     ? client.name
                     : "Cliente Rimosso/Sconosciuto";
@@ -125,11 +127,11 @@ async function loadInvoicesTable() {
             })
             .join("");
     } catch (error) {
-        console.error("Errore durante il caricamento delle fatture: ", error);
+        console.error("Nessun dato trovato o errore di rete: ", error);
         invoicesTableBody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center text-danger py-4">
-                    Errore durante il caricamento dei dati. 
+                <td colspan="5" class="text-center text-muted py-4">
+                    Nessuna fattura presente.
                 </td>
             </tr>`;
     }
@@ -268,12 +270,12 @@ async function toggleInvoiceStatus(invoiceId) {
         const updatedInvoice = { ...invoiceToUpdate, status: newStatus };
 
         // Richiamiamo la rotta patch al server
-        const response = await fetch(`${invoicesPath}/${invoiceId}`, {
+        const response = await fetch(`${invoicesPath}/${invoiceId}/status`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(newStatus),
+            body: JSON.stringify(updatedInvoice),
         });
 
         const data = await response.json();
@@ -309,7 +311,7 @@ async function filterInvoices(status) {
         </tr>`;
 
     try {
-        const invoices = await getInvoices();
+        let invoices = await getInvoices();
         const clients = await getClients();
 
         // Prendiamo solo le fatture richieste
@@ -339,16 +341,17 @@ async function filterInvoices(status) {
             })
             .join("");
     } catch (error) {
-        console.error("Errore durante il filtraggio:", error);
-        invoicesTableBody.innerHTML = `<tr>
-            <td colspan="5" class="text-center text-danger py-4">Errore di caricamento.</td>
-        </tr>`;
+        console.error("Nessun dato trovato o errore di rete: ", error);
+        invoicesTableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                    Nessuna fattura presente.
+                </td>
+            </tr>`;
     }
 }
 
-/**
- * Gestisce il download del file CSV generato dal server
- */
+// Funzione che gestisce l'esportazione in csv
 function exportToCSV() {
     const csvPath = "/export/csv";
     // Reindirizziamo la finestra alla rotta per l'export in csv
@@ -357,3 +360,4 @@ function exportToCSV() {
 
 // Rendiamo la funzione disponibile nell'html
 window.deleteInvoice = deleteInvoice;
+window.toggleInvoiceStatus = toggleInvoiceStatus;

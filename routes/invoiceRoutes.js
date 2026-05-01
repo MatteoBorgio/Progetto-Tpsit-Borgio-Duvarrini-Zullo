@@ -3,7 +3,10 @@ const fs = require("fs");
 const path = require("path");
 const router = express.Router();
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
-const ID_INVOICES_PATH = path.join(__dirname, "../counters/invoicesIdCounter.txt");
+const ID_INVOICES_PATH = path.join(
+    __dirname,
+    "../counters/invoicesIdCounter.txt",
+);
 const { validateInvoice } = require("../middlewares/validators.js");
 const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
 const logger = require("../middlewares/logger.js");
@@ -68,7 +71,7 @@ router.get("/:id", (req, res) => {
         const invoices = data ? JSON.parse(data) : [];
 
         // Recuperiamo i dati di una fattura specifica e li restituiamo al frontend
-        const invoice = invoices.find((i) => parseInt(i.id) === id);
+        const invoice = invoices.find((i) => parseInt(i.id) === parseInt(id));
         if (!invoice) {
             logger.warn("Fattura non trovata");
             return sendError(res, 404, "Fattura non trovata.");
@@ -121,14 +124,16 @@ router.post("/", (req, res) => {
 
         // Diamo alla nuova fattura un id univoco
         if (!fs.existsSync(ID_INVOICES_PATH)) {
-            newInvoice.id = 1
+            newInvoice.id = 1;
         } else {
-            const actualId = parseInt(fs.readFileSync(ID_INVOICES_PATH, "utf-8"));
+            const actualId = parseInt(
+                fs.readFileSync(ID_INVOICES_PATH, "utf-8"),
+            );
             newInvoice.id = actualId + 1;
         }
 
         // Scriviamo il nuovo Id su file
-        fs.writeFileSync(ID_INVOICES_PATH, newInvoice.id);
+        fs.writeFileSync(ID_INVOICES_PATH, String(newInvoice.id));
         invoices.push(newInvoice);
 
         // Riscriviamo i file e restituiamo i dati all'utente
@@ -182,7 +187,9 @@ router.put("/:id", (req, res) => {
         const invoices = data ? JSON.parse(data) : [];
 
         // Recuperiamo l'indice della fattura in invoices
-        const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
+        const invoiceIndex = invoices.findIndex(
+            (i) => parseInt(i.id) === parseInt(id),
+        );
 
         if (invoiceIndex === -1) {
             logger.warn("Fattura non trovata");
@@ -240,7 +247,9 @@ router.patch("/:id/status", (req, res) => {
         const invoices = data ? JSON.parse(data) : [];
 
         // Recuperiamo l'indice della fattura in invoices
-        const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
+        const invoiceIndex = invoices.findIndex(
+            (i) => parseInt(i.id) === parseInt(id),
+        );
 
         if (invoiceIndex === -1) {
             logger.warn("Fattura non trovata");
@@ -290,7 +299,9 @@ router.delete("/:id", (req, res) => {
         const invoices = data ? JSON.parse(data) : [];
 
         // Troviamo l'indice della fattura e lo eliminiamo dalla lista
-        const invoiceIndex = invoices.findIndex((i) => parseInt(i.id) === id);
+        const invoiceIndex = invoices.findIndex(
+            (i) => parseInt(i.id) === parseInt(id),
+        );
         if (invoiceIndex === -1) {
             logger.warn("Fattura non trovata");
             return sendError(res, 404, "Fattura non trovata.");
@@ -315,4 +326,3 @@ router.delete("/:id", (req, res) => {
 });
 
 module.exports = router;
-

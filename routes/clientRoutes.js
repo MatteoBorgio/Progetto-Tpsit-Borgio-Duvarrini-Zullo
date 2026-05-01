@@ -5,7 +5,10 @@ const { validateClient } = require("../middlewares/validators.js");
 const router = express.Router();
 const CLIENT_DB = path.join(__dirname, "../data/clients.json");
 const INVOICES_DB = path.join(__dirname, "../data/invoices.json");
-const ID_CLIENTS_PATH = path.join(__dirname, "../counters/clientsIdCounter.txt");
+const ID_CLIENTS_PATH = path.join(
+    __dirname,
+    "../counters/clientsIdCounter.txt",
+);
 const { sendError, sendSuccessResponse } = require("../utils/serverUtils.js");
 const logger = require("../middlewares/logger.js");
 
@@ -66,7 +69,7 @@ router.get("/:id", (req, res) => {
         const clients = data ? JSON.parse(data) : [];
 
         // Recuperiamo i dati di un cliente specifico e li restituiamo al frontend
-        const client = clients.find((c) => parseInt(c.id) === id);
+        const client = clients.find((c) => parseInt(c.id) === parseInt(id));
         if (!client) {
             logger.warn("Cliente non trovato");
             return sendError(res, 404, "Cliente non trovato.");
@@ -122,14 +125,16 @@ router.post("/", (req, res) => {
 
         // Diamo al nuovo cliente un id univoco
         if (!fs.existsSync(ID_CLIENTS_PATH)) {
-            newClient.id = 1
+            newClient.id = 1;
         } else {
-            const actualId = parseInt(fs.readFileSync(ID_CLIENTS_PATH, "utf-8"));
+            const actualId = parseInt(
+                fs.readFileSync(ID_CLIENTS_PATH, "utf-8"),
+            );
             newClient.id = actualId + 1;
         }
 
         // Scriviamo il nuovo Id su file
-        fs.writeFileSync(ID_CLIENTS_PATH, newClient.id);
+        fs.writeFileSync(ID_CLIENTS_PATH, String(newClient.id));
         clients.push(newClient);
 
         // Riscriviamo i file e restituiamo i dati all'utente
@@ -185,7 +190,9 @@ router.put("/:id", (req, res) => {
         const clients = data ? JSON.parse(data) : [];
 
         // Recuperiamo l'indice del cliente in clients
-        const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
+        const clientIndex = clients.findIndex(
+            (c) => parseInt(c.id) === parseInt(id),
+        );
 
         if (clientIndex === -1) {
             logger.warn("Cliente non trovato");
@@ -237,7 +244,9 @@ router.delete("/:id", (req, res) => {
         const clients = data ? JSON.parse(data) : [];
 
         // Troviamo l'indice del cliente e lo eliminiamo dalla lista
-        const clientIndex = clients.findIndex((c) => parseInt(c.id) === id);
+        const clientIndex = clients.findIndex(
+            (c) => parseInt(c.id) === parseInt(id),
+        );
         if (clientIndex === -1) {
             logger.warn("Cliente non trovato");
             return sendError(res, 404, "Cliente non trovato.");
@@ -246,10 +255,10 @@ router.delete("/:id", (req, res) => {
         if (fs.existsSync(INVOICES_DB)) {
             // Verifichiamo che non esistano fatture intestate al cliente
             const invoicesData = fs.readFileSync(INVOICES_DB, "utf-8");
-            const invoices = invoicesData ? JSON.parse(data) : [];
+            const invoices = invoicesData ? JSON.parse(invoicesData) : [];
 
             const clientInvoices = invoices.find(
-                (invoice) => parseInt(invoice.clientId) === id,
+                (invoice) => parseInt(invoice.clientId) === parseInt(id),
             );
 
             if (clientInvoices) {
