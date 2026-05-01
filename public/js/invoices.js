@@ -1,10 +1,16 @@
 import { getInvoices, getClients } from "../../utils/clientUtils.js";
 import { invoicesPath, clientsPath } from "../../utils/clientUtils.js";
 
-/**
- * Funzione principale che coordina il caricamento iniziale della pagina
- */
-async function initPage() {}
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Carichiamo i clienti appena la pagina è pronta
+    loadInvoicesTable();
+
+    // 2. Colleghiamo l'evento di submit del form alla funzione di salvataggio
+    const form = document.getElementById("formInvoice");
+    if (form) {
+        form.addEventListener("submit", handleNewInvoice);
+    }
+});
 
 // Funzione che popola il menu a tendina dei clienti
 async function loadClientsSelect() {
@@ -125,10 +131,49 @@ function renderInvoiceRow(invoice, clientName) {
     `;
 }
 
-/**
- * Gestisce l'invio del form per creare una nuova fattura
- */
-async function handleCreateInvoice(event) {}
+// Funzione per l'aggiunta di una nuova fattura
+async function handleNewInvoice(event) {
+    // Impediamo alla pagina di ricaricarsi
+    event.preventDefault();
+
+    // Riprendiamo i dati del form dall'oggetto event
+    const form = event.target;
+    const formData = new FormData(form);
+    const invoiceData = Object.fromEntries(formData.entries());
+
+    // Aggiungiamo i campi necessari prima di inviare al server
+    invoiceData.date = new Date().toISOString();
+    invoiceData.status = "sent";
+
+    try {
+        // Effettuiamo una richiesta post per aggiungere un nuovo cliente
+        const response = await fetch(invoicesPath, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(invoiceData),
+        });
+        const data = await response.json();
+        if (data.success) {
+            // Chiudiamo la modale sfruttando le funzionalità di bootstrap
+            const modalElement = document.getElementById("modalInvoice");
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
+            // Puliamo il form per un futuro inserimento
+            form.reset();
+            // Ricarichiamo la tabella aggiornata
+            loadInvoicesTable();
+        } else {
+            alert(
+                `Errore: ${data.message || "Impossibile salvare la fattura"}`,
+            );
+        }
+    } catch (error) {
+        console.error("Errore durante il salvataggio:", error);
+        alert("Errore di connessione al server");
+    }
+}
 
 /**
  * Elimina una fattura specifica

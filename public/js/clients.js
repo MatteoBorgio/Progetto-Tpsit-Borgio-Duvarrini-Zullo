@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Carichiamo i clienti appena la pagina è pronta
     loadClients();
 
-    // 2. Colleghiamo l'evento di submit del form alla funzione di salvataggio
+    // Colleghiamo l'evento di submit del form alla funzione di salvataggio
     const form = document.getElementById("formClient");
     if (form) {
         form.addEventListener("submit", handleNewClient);
