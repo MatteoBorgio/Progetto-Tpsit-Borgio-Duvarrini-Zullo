@@ -24,6 +24,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 deleteInvoice(invoiceId);
             }
 
+            // Gestione bottone XML
+            const xmlBtn = event.target.closest(".btn-xml");
+            if (xmlBtn) {
+                const invoiceId = xmlBtn.getAttribute("data-id");
+                downloadInvoiceXML(invoiceId);
+            }
+
             // Gestione bottone Cambia Stato
             const toggleBtn = event.target.closest(".btn-toggle");
             if (toggleBtn) {
@@ -79,7 +86,6 @@ async function loadClientsSelect() {
         });
     } catch (error) {
         console.error("Errore durante il salvataggio:", error);
-        alert("Errore di connessione al server");
     }
 }
 
@@ -170,6 +176,9 @@ function renderInvoiceRow(invoice, clientName) {
             <td class="align-middle">${amount}</td>
             <td class="align-middle"><span class="badge ${badgeClass}">${status}</span></td>
             <td class="align-middle text-end">
+                <button class="btn btn-sm btn-outline-primary btn-xml" data-id="${invoice.id}" title="Scarica XML">
+                    📄
+                </button>
                 <button class="btn btn-sm btn-outline-success btn-toggle" data-id="${invoice.id}" title="Cambia stato">
                     🔄
                 </button>
@@ -221,7 +230,6 @@ async function handleNewInvoice(event) {
         }
     } catch (error) {
         console.error("Errore durante il salvataggio:", error);
-        alert("Errore di connessione al server");
     }
 }
 
@@ -247,7 +255,6 @@ async function deleteInvoice(invoiceId) {
         }
     } catch (error) {
         console.error("Errore durante l'eliminazione:", error);
-        alert("Errore di rete durante l'eliminazione.");
     }
 }
 
@@ -292,9 +299,6 @@ async function toggleInvoiceStatus(invoiceId) {
         console.error(
             "Errore durante l'aggiornamento dello stato della fattura: ",
             error,
-        );
-        alert(
-            "Errore di rete durante l'aggiornamento dello stato della fattura",
         );
     }
 }
@@ -358,6 +362,14 @@ function exportToCSV() {
     window.location.href = csvPath;
 }
 
+// Funzione per scaricare la fattura in xml
+function downloadInvoiceXML(invoiceId) {
+    const xmlUrl = `/export/xml/${invoiceId}`;
+    // Reindirizziamo la finestra alla rotta per l'export in xml
+    window.location.href = xmlUrl;
+}
+
 // Rendiamo la funzione disponibile nell'html
 window.deleteInvoice = deleteInvoice;
 window.toggleInvoiceStatus = toggleInvoiceStatus;
+window.downloadInvoiceXML = downloadInvoiceXML;
