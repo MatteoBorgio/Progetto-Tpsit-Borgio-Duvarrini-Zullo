@@ -44,53 +44,6 @@ router.get("/", (req, res) => {
 });
 
 /**
- * Rotta get /invoices/:id
- * Recupera i dati di una fattura specifica attraverso un id univoco inserito
- * nei parametri della richiesta
- */
-router.get("/:id", (req, res) => {
-    try {
-        logger.info(
-            "Richiesta GET per recuperare i dati di una specifica fattura",
-        );
-        // Verifichiamo l'esistenza del file invoices.json
-        if (!fs.existsSync(INVOICES_DB)) {
-            logger.warn("File invoices.json non trovato");
-            return sendError(res, 404, "File non trovato");
-        }
-
-        // Recuperiamo l'id dai parametri della richiesta
-        // e verifichiamo sia un numero
-        const id = parseInt(req.params.id);
-        if (!id || isNaN(id)) {
-            logger.warn("Id non fornito correttamente");
-            return sendError(res, 400, "Id non inserito correttamente");
-        }
-
-        const data = fs.readFileSync(INVOICES_DB, "utf-8");
-        const invoices = data ? JSON.parse(data) : [];
-
-        // Recuperiamo i dati di una fattura specifica e li restituiamo al frontend
-        const invoice = invoices.find((i) => parseInt(i.id) === parseInt(id));
-        if (!invoice) {
-            logger.warn("Fattura non trovata");
-            return sendError(res, 404, "Fattura non trovata.");
-        }
-
-        logger.info("Dati della fattura recuperati con successo");
-        return sendSuccessResponse(
-            res,
-            200,
-            "Dati della fattura recuperati.",
-            invoice,
-        );
-    } catch (error) {
-        logger.error("Errore interno: " + error);
-        return sendError(res, 500, "Errore interno del server.");
-    }
-});
-
-/**
  * Rotta post /invoices/
  * Recupera la richiesta dal frontend, verifica con la funzione validateInvoice
  * definita in /middlewares/validator.js e, se tutto va a buon fine,

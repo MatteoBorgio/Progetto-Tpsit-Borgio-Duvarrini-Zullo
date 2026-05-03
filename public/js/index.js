@@ -41,6 +41,7 @@ async function calculateTotalInvoices(invoices) {
     if (statPending)
         statPending.innerText = formatter.format(totalAmountPending);
 }
+
 // Funzione che calcola il numero di clienti e lo scrive nell'html
 async function calculateTotalCLients(clients) {
     const statClientsCount = document.getElementById("statClientsCount");
