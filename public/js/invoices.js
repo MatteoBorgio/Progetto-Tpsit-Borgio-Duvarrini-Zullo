@@ -339,7 +339,9 @@ async function filterInvoices(status) {
         // Scriviamo sulla tabella le fatture che corrispondono
         invoicesTableBody.innerHTML = invoices
             .map((invoice) => {
-                const client = clients.find((c) => c.id === invoice.clientId);
+                const client = clients.find(
+                    (c) => String(c.id) === String(invoice.clientId),
+                );
                 const clientName = client ? client.name : "Cliente Rimosso";
                 return renderInvoiceRow(invoice, clientName);
             })
